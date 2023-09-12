@@ -187,7 +187,7 @@ def plot_single_curve_save_datas(df):
 # 主函数
 def main():
     # 设置页面宽度必须在第一句
-    st.set_page_config(layout="centered")
+    # st.set_page_config(layout="centered")
     df = load_data()
     if df is not None:
         plot_all_curves(df)
