@@ -12,7 +12,6 @@ import os
 # 1.0 -----读入DataFrame-----
 @st.cache_data(experimental_allow_widgets=True)  # 缓存加载数据
 def load_data():
-    st.title(":bar_chart:数据预处理——薄膜的IV曲线分析")  # 📊代码为:bar_chart:
     # 设置上传选项，Markdown语法设置加粗
     uploaded_file = st.file_uploader("上传一个包含IV曲线数据的Excel文件，通常为[**yyyymmdd-Resistance_merged.xlsx**]文件",
                                      type=["xlsx", "xls"])
@@ -188,6 +187,7 @@ def plot_single_curve_save_datas(df):
 def main():
     # 设置页面宽度必须在第一句
     # st.set_page_config(layout="centered")
+    st.title(":bar_chart:数据预处理——薄膜的IV曲线分析")  # 📊代码为:bar_chart:
     df = load_data()
     if df is not None:
         plot_all_curves(df)

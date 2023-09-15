@@ -19,13 +19,12 @@ def load_data():
     '''
     :return: array, string
     '''
-    st.title(":scissors:数据预处理——图片裁切工具")  # ✂️
-    # 设置上传选项，Markdown语法设置加粗
+    # 设置上传选项
     uploaded_file = st.file_uploader('请选择一张图片上传', type=["jpg", "png"])
-    image = Image.open(uploaded_file)
-    img = np.asarray(image)
     # 返回图像和文件名
     if uploaded_file is not None:
+        image = Image.open(uploaded_file)
+        img = np.asarray(image)
         file_name = uploaded_file.name
         return img, file_name
     else:
@@ -39,7 +38,7 @@ def crop_image(img):
     :param img: array
     :return: array
     '''
-    st.subheader(":triangular_ruler:裁剪原始图片")  # 📐
+    st.subheader(":triangular_ruler: 裁剪原始图片")  # 📐
     col1, col2 = st.columns([50, 50])
 
     # 设定裁切的矩形框的左上角和右下角的坐标
@@ -89,7 +88,7 @@ def block_img(img, file_name):
     :param file_name: string
     :return:
     '''
-    st.subheader(":triangular_ruler:将裁剪后的图像按网格线形式分块")  # 📐
+    st.subheader(":triangular_ruler: 将裁剪后的图像按网格线形式分块")  # 📐
     col1, col2 = st.columns([50, 50])
 
     # 选择在裁剪后的矩形框中添加横线和竖线，自定义个数和移动位置
@@ -171,6 +170,7 @@ def block_img(img, file_name):
 
 
 def main():
+    st.title(":scissors: 数据预处理——图片裁切工具")  # ✂️
     # 1.0 -----加载图片----
     img, origin_file_name = load_data()
     if img is not None:

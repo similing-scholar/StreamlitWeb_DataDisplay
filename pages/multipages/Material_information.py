@@ -51,7 +51,7 @@ def create_image_uri(image_path):
 
 def display_solute_information(df_solute):
     # -----📓-----
-    st.subheader(":notebook:溶质基本属性信息查询")
+    st.subheader(":notebook: 溶质基本属性信息查询")
     # 使用apply方法，在DataFrame的每一行上应用写入uri信息函数
     for row in ['Struct', 'UV', 'NearIR', 'IR', 'HNMR', 'MS']:
         df_solute[row] = df_solute[row].apply(create_image_uri)
@@ -99,7 +99,7 @@ def display_solute_information(df_solute):
 
 def display_solvent_information(df_solvent):
     # -----📓-----
-    st.subheader(":notebook:溶剂基本属性信息查询")
+    st.subheader(":notebook: 溶剂基本属性信息查询")
     # 使用apply方法，在DataFrame的每一行上应用写入uri信息函数
     for row in ['Struct', 'UV', 'NearIR', 'IR', 'HNMR', 'MS']:
         df_solvent[row] = df_solvent[row].apply(create_image_uri)
@@ -148,7 +148,7 @@ def main(excel_file_path):
     # 设置页面宽度必须在第一句，且全局只能设置一次
     # st.set_page_config(layout="wide")
     # -----📚-----
-    st.title(':books:化学品基本属性信息展示')
+    st.title(':books: 化学品基本属性信息展示')
 
     # 使用侧边栏选择要展示的多页面
     page = st.sidebar.radio("通过侧边选项栏选择化学品类别", ["溶质", "溶剂"])
