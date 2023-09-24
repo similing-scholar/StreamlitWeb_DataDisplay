@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import cv2
 import os
 import pandas as pd
+import pyperclip
 
 
 @st.cache_data(experimental_allow_widgets=True)
@@ -36,6 +37,9 @@ def get_img_coordinates(img):
         point_x = value["x"]
         point_y = value["y"]
         st.write(f'点击上图获取的坐标位置为：{point_x}, {point_y}')
+        # 将坐标点复制到剪贴板
+        pyperclip.copy(f'{point_x}, {point_y}')
+        st.success(f'{point_x}, {point_y}已复制到剪切板')
     else:
         st.write(':+1:请点击上方图片选择一个像素点')  # 👍
     return None
@@ -128,9 +132,10 @@ class RadialProfileCalculator:
         return gray_values
 
     def radial_profile_mean_variance(self, img, center, new_radius):
-        # 创建一个数组，存储每个半径对应的灰度平均值和方差
+        # 创建一个数组，存储每个半径对应的灰度平均值和方差(标准差
         gray_values = []
-        variances = []
+        # variances = []
+        standard_deviation = []
 
         # 计算每个像素的灰度值
         for i in range(new_radius + 1):
@@ -155,9 +160,10 @@ class RadialProfileCalculator:
 
             # 计算当前半径上所有像素的灰度平均值和方差并添加到列表中
             gray_values.append(np.mean(gray_values_at_radius))
-            variances.append(np.var(gray_values_at_radius))
+            # variances.append(np.var(gray_values_at_radius))  # 方差
+            standard_deviation.append(np.std(gray_values_at_radius))  # 标准差
 
-        return gray_values, variances
+        return gray_values, standard_deviation
 
 
 @st.cache_data(experimental_allow_widgets=True)
@@ -202,7 +208,7 @@ def get_coffee_ring_center(img):
             radius = int(radius)
 
             # 设置一个新的半径
-            new_radius = st.number_input("修改**半径**让咖啡环完全进入mask选区", min_value=0, max_value=200,
+            new_radius = st.number_input("修改**半径**让咖啡环完全进入mask选区", min_value=0, max_value=500,
                                          value=int(radius * 1.2))
 
     with col2:
@@ -242,39 +248,76 @@ def get_radial_profile_data(img, file_name, scale, center, radius):
     # 实例化之前定义的径向像素值强度分布计算类
     calculator = RadialProfileCalculator()
     # 3个通道数据
-    R_gray_values, R_variances = calculator.radial_profile_mean_variance(img[:, :, 0], center, radius)
-    G_gray_values, G_variances = calculator.radial_profile_mean_variance(img[:, :, 1], center, radius)
-    B_gray_values, B_variances = calculator.radial_profile_mean_variance(img[:, :, 2], center, radius)
+    R_gray_values, R_standard_deviation = calculator.radial_profile_mean_variance(img[:, :, 0], center, radius)
+    G_gray_values, G_standard_deviation = calculator.radial_profile_mean_variance(img[:, :, 1], center, radius)
+    B_gray_values, B_standard_deviation = calculator.radial_profile_mean_variance(img[:, :, 2], center, radius)
 
-    # 绘制灰度值随半径的变化曲线
+    # ---绘制灰度值随半径的变化曲线---
     L = np.arange(0, radius + 1)
+    # 使用gridspec界面进行复杂图排版
+    fig = plt.figure()
+    grid = plt.GridSpec(6, 4)
     # 创建一个带有两个y轴的图
-    fig, ax1 = plt.subplots()
+    ax1 = fig.add_subplot(grid[0:4, 0:4])
     # 创建第二个y轴
     ax2 = ax1.twinx()
-    # 设置标题与坐标轴标签
-    plt.title('灰度值随半径的变化曲线\n'
-              '')
+    # 设置标题与坐标轴
+    ax1.set_title('灰度值随半径的变化曲线')
+    ax1.set_xticks(np.arange(0, radius + 11, 10))  # 设置x轴坐标间隔为10
     ax1.set_xlabel('Radius (pixels)')
     ax1.set_ylabel('Gray Value')
-    ax2.set_ylabel('Variance')
+    ax2.set_ylabel('Standard Deviation')
     # 绘制曲线
-    ax1.plot(L, R_gray_values, label='R channel', color='#dc565a')
-    ax1.plot(L, G_gray_values, label='G channel', color='#56dc95')
-    ax1.plot(L, B_gray_values, label='B channel', color='#569ddc')
-    ax2.plot(L, R_variances, '--', label='R channel variance', color='#e6878a')
-    ax2.plot(L, G_variances, '--', label='G channel variance', color='#87e6b4')
-    ax2.plot(L, B_variances, '--', label='B channel variance', color='#87b9e6')
+    ax1.plot(L, R_gray_values, label='R gray_values', color='#dc565a')
+    ax1.plot(L, G_gray_values, label='G gray_values', color='#56dc95')
+    ax1.plot(L, B_gray_values, label='B gray_values', color='#569ddc')
+    ax2.plot(L, R_standard_deviation, '--', label='R standard_deviation', color='#e6878a')
+    ax2.plot(L, G_standard_deviation, '--', label='G standard_deviation', color='#87e6b4')
+    ax2.plot(L, B_standard_deviation, '--', label='B standard_deviation', color='#87b9e6')
 
     # 将图例合并
     handles1, labels1 = ax1.get_legend_handles_labels()
     handles2, labels2 = ax2.get_legend_handles_labels()
     handles = handles1 + handles2
     labels = labels1 + labels2
-    # 渲染
     ax1.legend(handles, labels)
+
+    # ---将Img裁切到只有mask最小外接矩形大小和位置---
+    # 创建与输入图像相同大小的全零掩码
+    mask = np.zeros_like(img)
+    # 创建一个白色填充的圆形掩码
+    cv2.circle(mask, center, radius, (255, 255, 255), thickness=cv2.FILLED)
+    # 执行按位与（AND）操作，保留都有值的部分
+    masked_img = cv2.bitwise_and(img, mask)
+    # 计算新图像的左上角坐标
+    (new_x, new_y) = (center[0] - radius, center[1] - radius)
+    # 计算新图像的右下角坐标
+    new_width = new_height = 2 * radius
+    # 使用切片获取最小外接正方形
+    cropped_masked_img = masked_img[new_y:new_y + new_height, new_x:new_x + new_width]
+    r, g, b = cv2.split(cropped_masked_img)
+
+    # 继续在fig上使用graidspec排版
+    axrgb = fig.add_subplot(grid[4:6, 0])
+    axrgb.set_title('rgb image')
+    axrgb.imshow(cropped_masked_img)
+    axrgb.axis('off')
+    axr = fig.add_subplot(grid[4:6, 1])
+    axr.set_title('R channel')
+    axr.imshow(r, cmap='gray')
+    axr.axis('off')
+    axg = fig.add_subplot(grid[4:6, 2])
+    axg.set_title('G channel')
+    axg.imshow(g, cmap='gray')
+    axg.axis('off')
+    axb = fig.add_subplot(grid[4:6, 3])
+    axb.set_title('B channel')
+    axb.imshow(b, cmap='gray')
+    axb.axis('off')
+    # 渲染
     plt.tight_layout()
     st.pyplot(fig)
+
 
     # -----💾-----
     # 添加输入框，用于传入保存目录
@@ -288,9 +331,9 @@ def get_radial_profile_data(img, file_name, scale, center, radius):
 
         # ---保存数据到excel---
         # 将gray_values, variances保存到sheet1中
-        df1 = pd.DataFrame({'radius': L.tolist(), 'R_gray_values': R_gray_values, 'R_variances': R_variances,
-                            'G_gray_values': G_gray_values, 'G_variances': G_variances,
-                            'B_gray_values': B_gray_values, 'B_variances': B_variances})
+        df1 = pd.DataFrame({'radius': L.tolist(), 'R_gray_values': R_gray_values, 'R_variances': R_standard_deviation,
+                            'G_gray_values': G_gray_values, 'G_variances': G_standard_deviation,
+                            'B_gray_values': B_gray_values, 'B_variances': B_standard_deviation})
         # 将center, radius保存到sheet2中
         df2 = pd.DataFrame({'center(x, y)': list(center), 'radius (pixel)': radius, 'scale (mm/pixel)': scale})
         writer = pd.ExcelWriter(os.path.join(save_dir, f'{file_name[:-4]}_RadialProfile.xlsx'), engine='xlsxwriter')
