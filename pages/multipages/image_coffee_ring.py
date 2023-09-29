@@ -7,13 +7,13 @@ import cv2
 import os
 import pandas as pd
 import pyperclip
+import math
 
 
 @st.cache_data(experimental_allow_widgets=True)
 def load_data():
-    '''
-    :return: array
-    '''
+    """返回图像的数组和文件名
+    """
     uploaded_file = st.file_uploader('请选择一张图片上传', type=["jpg", "png"])
     # 返回图像和文件名
     if uploaded_file is not None:
@@ -25,12 +25,10 @@ def load_data():
         return None, None
 
 
-# 使用streamlit_image_coordinates库，渲染图片，并返回鼠标点击图像像素点的坐标
 def get_img_coordinates(img):
-    '''
+    """使用streamlit_image_coordinates库，渲染图片，并返回鼠标点击图像像素点的坐标
     :param img: array
-    :return:
-    '''
+    """
     st.subheader(":point_down: 图像像素点位置获取面板")  # 👇
     value = sic.streamlit_image_coordinates(img, key="pil")
     if value is not None:
@@ -45,13 +43,10 @@ def get_img_coordinates(img):
     return None
 
 
-# 通过在图片上标记两个已知实际距离的像素点，计算出像素与实际距离的比例
 @st.cache_data(experimental_allow_widgets=True)
 def actual_size_mapping(img):
-    '''
-    :param img: array
-    :return: float
-    '''
+    """通过在图片上标记两个已知实际距离的像素点，计算出像素与实际距离的比例
+    """
     st.subheader(":straight_ruler: 计算图片像素距离与实际距离的映射比例")  # 📏
     col1, col2 = st.columns([40, 60])
 
@@ -107,10 +102,13 @@ def actual_size_mapping(img):
                     return scale
 
 
-# 定义一个提取咖啡环图片颜色变化的类
 class RadialProfileCalculator:
-    #  定义一个函数，计算从圆心到新的圆，在指定方向上的灰度平均值随半径的变化
+    """定义一个提取咖啡环图片颜色变化的类
+    """
+
     def radial_profile_direction(self, img, center, new_radius, direction_angle_degrees):
+        """计算从圆心到新的圆，在指定方向上的灰度平均值随半径的变化
+        """
         # 将方向角度转换为弧度
         direction_angle_radians = np.deg2rad(direction_angle_degrees)
         # 创建一个数组，存储每个半径对应的灰度平均值
@@ -132,7 +130,8 @@ class RadialProfileCalculator:
         return gray_values
 
     def radial_profile_mean_variance(self, img, center, new_radius):
-        # 创建一个数组，存储每个半径对应的灰度平均值和方差(标准差
+        """创建一个数组，存储每个半径对应的灰度平均值和方差(标准差)
+        """
         gray_values = []
         # variances = []
         standard_deviation = []
@@ -166,36 +165,12 @@ class RadialProfileCalculator:
         return gray_values, standard_deviation
 
 
-@st.cache_data(experimental_allow_widgets=True)
-def get_coffee_ring_center(img):
-    '''
-    :param img: array
-    :return: int
-    '''
-    st.subheader(":straight_ruler: 找到咖啡环中心与最大轮廓")  # 📏
-    col1, col2 = st.columns([35, 65])
+class CalculateCircleCenter:
+    """定义一个计算圆心的类"""
 
-    with col1:
-        # 添加输入框，用于传入近似中点的坐标， 默认为图片中心
-        point_center = st.text_input('请输入一个**近似的中心点**坐标 x, y :',
-                                     value=f'{img.shape[1] // 2}, {img.shape[0] // 2}')
-        try:
-            point_x, point_y = map(int, point_center.split(','))
-        except ValueError:
-            st.warning("请输入有效的坐标")
-
-        # 获取点击点的颜色
-        color = img[point_y, point_x]
-        # 添加颜色阈值选择滑块
-        color_threshold = st.slider("颜色阈值范围（±）", min_value=1, max_value=50, value=20)
-        lower_bound = np.array([color[0] - color_threshold, color[1] - color_threshold, color[2] - color_threshold])
-        upper_bound = np.array([color[0] + color_threshold, color[1] + color_threshold, color[2] + color_threshold])
-
-        # 使用颜色阈值来筛选出符合条件的区域
-        mask = cv2.inRange(img, lower_bound, upper_bound)
-        # 渲染将阈值筛选后的图像
-        st.image(mask, caption='mask of origin image')
-
+    def center_from_mask(self, mask):
+        """通过mask计算最小外接圆的圆心坐标
+        """
         # 寻找轮廓
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         if contours:
@@ -206,13 +181,111 @@ def get_coffee_ring_center(img):
             (x, y), radius = cv2.minEnclosingCircle(largest_contour)
             center = (int(x), int(y))
             radius = int(radius)
+        else:
+            center = None
+            radius = None
 
-            # 设置一个新的半径
-            new_radius = st.number_input("修改**半径**让咖啡环完全进入mask选区", min_value=0, max_value=500,
-                                         value=int(radius * 1.2))
+        return center, radius
+
+    def center_from_3point(self, point1, point2, point3):
+        """通过3点坐标计算圆心坐标，返回圆心坐标和半径
+        """
+        x1, y1 = point1
+        x2, y2 = point2
+        x3, y3 = point3
+
+        # 计算圆心坐标
+        d = 2 * (x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2))
+        ux = ((x1 ** 2 + y1 ** 2) * (y2 - y3) + (x2 ** 2 + y2 ** 2) * (y3 - y1) + (x3 ** 2 + y3 ** 2) * (y1 - y2)) / d
+        uy = ((x1 ** 2 + y1 ** 2) * (x3 - x2) + (x2 ** 2 + y2 ** 2) * (x1 - x3) + (x3 ** 2 + y3 ** 2) * (x2 - x1)) / d
+        center = (int(ux), int(uy))
+
+        # 计算半径
+        radius = math.sqrt((x1 - ux) ** 2 + (y1 - uy) ** 2)
+        radius = int(radius)
+
+        return center, radius
+
+
+@st.cache_data(experimental_allow_widgets=True)
+def get_coffee_ring_center(img):
+    """找到咖啡环中心与最大轮廓的web部件
+    """
+    st.subheader(":straight_ruler: 找到咖啡环中心与最大轮廓")  # 📏
+    col1, col2 = st.columns([35, 65])
+
+    with col1:
+        center_method = st.radio("选择计算圆心的方法", ["阈值mask法计算圆心", "3点法计算圆心"])
+
+        if center_method == "阈值mask法计算圆心":
+            # 添加输入框，用于传入近似中点的坐标， 默认为图片中心
+            point_center = st.text_input('请输入一个**近似的中心点**坐标 x, y :',
+                                         value=f'{img.shape[1] // 2}, {img.shape[0] // 2}')
+            try:
+                point_x, point_y = map(int, point_center.split(','))
+            except ValueError:
+                st.warning("请输入有效的坐标")
+
+            # 获取点击点的颜色
+            color = img[point_y, point_x]
+            # 添加颜色阈值选择滑块
+            color_threshold = st.slider("颜色阈值范围（±）", min_value=1, max_value=50, value=20)
+            lower_bound = np.array([color[0] - color_threshold, color[1] - color_threshold, color[2] - color_threshold])
+            upper_bound = np.array([color[0] + color_threshold, color[1] + color_threshold, color[2] + color_threshold])
+
+            # 使用颜色阈值来筛选出符合条件的区域
+            mask = cv2.inRange(img, lower_bound, upper_bound)
+            # 渲染将阈值筛选后的图像
+            st.image(mask, caption='mask of origin image')
+
+            # 计算的圆心坐标和半径
+            center, radius = CalculateCircleCenter().center_from_mask(mask)
+
+        elif center_method == "3点法计算圆心":
+            # 添加输入框，用于传入三个点的坐标
+            point1 = st.text_input('请输入point1坐标点 x, y :', value=f'{img.shape[1] // 3}, {img.shape[0] // 3}')
+            point2 = st.text_input('请输入point2坐标点 x, y :', value=f'{img.shape[1] // 2}, {img.shape[0] // 2}')
+            point3 = st.text_input('请输入point3坐标点 x, y :',
+                                   value=f'{img.shape[1] // 3 * 2}, {img.shape[0] // 3 * 2}')
+
+            try:
+                point1_x, point1_y = map(int, point1.split(','))
+                point2_x, point2_y = map(int, point2.split(','))
+                point3_x, point3_y = map(int, point3.split(','))
+            except ValueError:
+                st.warning("请输入有效的坐标")
+
+            # 在图像上标记三个点
+            img_copy = img.copy()
+            cv2.circle(img_copy, (point1_x, point1_y), 3, (255, 0, 0), -1)
+            cv2.circle(img_copy, (point2_x, point2_y), 3, (255, 0, 0), -1)
+            cv2.circle(img_copy, (point3_x, point3_y), 3, (255, 0, 0), -1)
+            # 渲染
+            st.image(img_copy, caption='3 points of origin image')
+
+            # 计算的圆心坐标和半径
+            center, radius = CalculateCircleCenter().center_from_3point((point1_x, point1_y),
+                                                                        (point2_x, point2_y),
+                                                                        (point3_x, point3_y))
 
     with col2:
-        st.write(f'<center>计算mask内最小外接圆的圆心坐标位置为：{int(x)}, {int(y)}<center>', unsafe_allow_html=True)
+        # 自定义新的圆心
+        customization = st.checkbox('自定义圆心')
+        if customization:
+            # 添加输入框，用于传入新的圆心坐标
+            new_center = st.text_input('请输入新的圆心坐标 x, y :', value=f'{center[0]}, {center[1]}')
+            try:
+                new_center_x, new_center_y = map(int, new_center.split(','))
+            except ValueError:
+                st.warning("请输入有效的坐标")
+            # 设置新的圆心
+            center = (new_center_x, new_center_y)
+
+        # 设置一个新的半径
+        new_radius = st.number_input("修改**半径**获取咖啡环最大轮廓", min_value=0, max_value=500,
+                                     value=int(radius * 1.2))
+        # 打印计算返回的圆心坐标
+        st.write(f'<center>计算得到的圆心坐标位置为：{center[0]}, {center[1]}<center>', unsafe_allow_html=True)
         # 画出圆心，mask圆和新的mask圆
         img_copy = img.copy()
         cv2.circle(img_copy, center, 3, (0, 0, 255), -1)
@@ -237,12 +310,8 @@ def get_coffee_ring_center(img):
 
 @st.cache_data(experimental_allow_widgets=True)
 def get_radial_profile_data(img, file_name, scale, center, radius):
-    '''
-    :param center: tuple
-    :param radius: int
-    :param img: array
-    :return:
-    '''
+    """提取咖啡环径向分布的像素灰度值数据
+    """
     st.subheader(":straight_ruler: 提取咖啡环径向分布的像素灰度值数据")  # 📏
 
     # 实例化之前定义的径向像素值强度分布计算类
@@ -317,7 +386,6 @@ def get_radial_profile_data(img, file_name, scale, center, radius):
     # 渲染
     plt.tight_layout()
     st.pyplot(fig)
-
 
     # -----💾-----
     # 添加输入框，用于传入保存目录
