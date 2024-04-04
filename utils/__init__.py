@@ -1,0 +1,1 @@
+from utils.utils import create_image_uri
