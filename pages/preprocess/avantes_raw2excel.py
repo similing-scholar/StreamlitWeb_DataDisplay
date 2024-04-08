@@ -24,16 +24,20 @@ def transmittance_calculation(df):
     return result_df
 
 
-def transmittance_to_absorbance(transmittance):
-    # 透过率转吸光度
-    absorbance = -np.log10(transmittance)
-    return absorbance
+def transmittance_to_absorbance(transmittance_series):
+    # 确保所有值都是正数，以避免取对数时出错
+    # 将所有非正数值替换为一个非常小的正数
+    transmittance_series = transmittance_series.apply(lambda x: x if x > 0 else 1e-10)
+    # 计算吸光度
+    absorbance_series = -np.log10(transmittance_series)
+    return absorbance_series
 
 
 def absorbance_calculation(df):
     """计算吸光度"""
     result_df = transmittance_calculation(df)
-    result_df.iloc[:, 1:] = result_df.iloc[:, 1:].apply(transmittance_to_absorbance)
+    # 使用apply函数时，确保传递整个列，这里使用lambda函数确保每一列都正确处理
+    result_df.iloc[:, 1:] = result_df.iloc[:, 1:].apply(lambda x: transmittance_to_absorbance(x))
     return result_df
 
 

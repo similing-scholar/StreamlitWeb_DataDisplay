@@ -81,9 +81,9 @@ def merged_curve(folder_path, spectrum, x_scale, y_scale):
         plt.xlabel("Wavelength[nm]")
         plt.ylabel(spectrum)
         # 自定义颜色映射的颜色列表
-        custom_colors = ['#F44336', '#E91E63', '#9C27B0', '#673AB7', '#3F51B5', '#2196F3',
-                         '#03A9F4', '#00BCD4', '#009688', '#4CAF50', '#8BC34A', '#CDDC39',
-                         '#FFEB3B', '#FFC107', '#FF9800', '#FF5722', '#795548', '#9E9E9E', '#607D8B']
+        custom_colors = ['#E91ECC', '#E91E99', '#FFC0CB', '#9C27B0', '#3F51B5', '#C0CBFF', '#2196F3',
+                         '#00BCD4', '#009688', '#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107',
+                         '#FF9800', '#FF5722', '#F44336', '#c82423', '#795548', '#9E9E9E', '#607D8B']
         # 创建自定义的颜色映射
         custom_cmap = ListedColormap(custom_colors)
         # 使用自定义颜色映射分配颜色给曲线
@@ -123,13 +123,13 @@ def merged_normalized_curve(folder_path, spectrum, x_scale, y_scale):
         # 遍历每个光谱曲线并绘总图
         plt.figure()
         plt.xlim(x_scale[0], x_scale[1])
-        plt.ylim(y_scale[0], y_scale[1])
+        plt.ylim(-0.1, 1.1)
         plt.xlabel("Wavelength[nm]")
         plt.ylabel(spectrum)
         # 自定义颜色映射的颜色列表
-        custom_colors = ['#F44336', '#E91E63', '#9C27B0', '#673AB7', '#3F51B5', '#2196F3',
-                         '#03A9F4', '#00BCD4', '#009688', '#4CAF50', '#8BC34A', '#CDDC39',
-                         '#FFEB3B', '#FFC107', '#FF9800', '#FF5722', '#795548', '#9E9E9E', '#607D8B']
+        custom_colors = ['#E91ECC', '#E91E99', '#FFC0CB', '#9C27B0', '#3F51B5', '#C0CBFF', '#2196F3',
+                         '#00BCD4', '#009688', '#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107',
+                         '#FF9800', '#FF5722', '#F44336', '#c82423', '#795548', '#9E9E9E', '#607D8B']
         # 创建自定义的颜色映射
         custom_cmap = ListedColormap(custom_colors)
         # 使用自定义颜色映射分配颜色给曲线
@@ -211,7 +211,7 @@ def single_normalized_curve(folder_path, spectrum, x_scale, y_scale):
         # 遍历每个光谱曲线并绘总图
         plt.figure()
         plt.xlim(x_scale[0], x_scale[1])
-        plt.ylim(y_scale[0], y_scale[1])
+        plt.ylim(-0.1, 1.1)
         plt.xlabel("Wavelength[nm]")
         plt.ylabel(spectrum)
 

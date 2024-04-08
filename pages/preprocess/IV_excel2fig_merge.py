@@ -123,9 +123,9 @@ def merged_curve(folder_path):
         # 使用科学计数法表示纵轴坐标
         plt.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
         # 自定义颜色映射的颜色列表
-        custom_colors = ['#F44336', '#E91E63', '#9C27B0', '#673AB7', '#3F51B5', '#2196F3',
-                         '#03A9F4', '#00BCD4', '#009688', '#4CAF50', '#8BC34A', '#CDDC39',
-                         '#FFEB3B', '#FFC107', '#FF9800', '#FF5722', '#795548', '#9E9E9E', '#607D8B']
+        custom_colors = ['#E91ECC', '#E91E99', '#FFC0CB', '#9C27B0', '#3F51B5', '#C0CBFF', '#2196F3',
+                         '#00BCD4', '#009688', '#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107',
+                         '#FF9800', '#FF5722', '#F44336', '#c82423', '#795548', '#9E9E9E', '#607D8B']
         # 创建自定义的颜色映射
         custom_cmap = ListedColormap(custom_colors)
         # 使用自定义颜色映射分配颜色给曲线
