@@ -28,7 +28,6 @@ def merge_excel(folder_path, fit_check, w_l_value):
         # 将电流列名重命名为sheet_name即file_name
         df.rename(columns={df.columns[1]: curve_label}, inplace=True)
 
-
         # 如果第一次读取，直接作为基础 DataFrame
         if merged_df.empty:
             merged_df = df
@@ -54,6 +53,8 @@ def merge_excel_fit_line(df_merged, folder_path, w_l_value):
     curve_labels = df_merged.columns[1:]
     # 创建空列表
     results_data = []
+    diff_slope_data = []  # 差分
+    gradient_slope_data = []  # 梯度
 
     for curve_label in curve_labels:
         # 获取对应IV曲线的数据
@@ -78,23 +79,47 @@ def merge_excel_fit_line(df_merged, folder_path, w_l_value):
 
         # 固定参数
         curve_type = '欧姆型（恒电阻）'
-        sheet_resistance = coeffs[0] * w_l_value  # 方阻：Rs=RW/L, W界面宽1.5 L长2.5
+        sheet_resistance = (1 / coeffs[0]) * w_l_value  # 方阻：Rs=RW/L, W界面宽1.5 L长2.5 【注意：斜率的倒数才是电阻】
+
+        # 计算差分斜率
+        diff_slopes = np.diff(Current) / np.diff(Potential)
+        diff_slope_data.append(pd.Series(diff_slopes, name=curve_label))
+        mean_diff_slope = np.mean(diff_slopes)  # 均值
+        cv_diff_slope = np.std(diff_slopes) / mean_diff_slope if mean_diff_slope != 0 else float('inf')  # 变异系数
+        diff_sheet_resistance = (1 / mean_diff_slope) * w_l_value
+
+        # 计算梯度斜率（一阶导数）
+        gradient_slopes = np.gradient(Current, Potential)
+        gradient_slope_data.append(pd.Series(gradient_slopes, name=curve_label))
+        mean_gradient_slope = np.mean(gradient_slopes)
+        cv_gradient_slope = np.std(gradient_slopes) / mean_gradient_slope if mean_gradient_slope != 0 else float('inf')
+        gradient_sheet_resistance = (1 / mean_gradient_slope) * w_l_value
 
         # 将结果添加到DataFrame
-        data_dict = {'Curve Label': curve_label, 'Curve Type': curve_type,
-                     'Correlation Coefficient': correlation, 'Slope': coeffs[0],
-                     'Intercept': coeffs[1],
+        data_dict = {'Curve Label': curve_label, 'Curve Type': curve_type, 'W/L': w_l_value,
                      'voltage_range_start[V]': voltage1, 'voltage_range_end[V]': voltage2,
-                     'W/L': w_l_value, 'Sheet Resistance[ohm/sq]': sheet_resistance}
+                     'Correlation Coefficient': correlation, 'Fit Slope': coeffs[0],
+                     'Fit Intercept': coeffs[1],
+                     'Fit Sheet Resistance[ohm/sq]': sheet_resistance,
+                     'Mean Diff Slope': mean_diff_slope, 'CV Diff Slope': cv_diff_slope,
+                     'diff_sheet_resistance': diff_sheet_resistance,
+                     'Mean Deriv Slope': mean_gradient_slope, 'CV Deriv Slope': cv_gradient_slope,
+                     'gradient_sheet_resistance': gradient_sheet_resistance}
         # 将当前数据添加到列表中
         results_data.append(data_dict)
 
     # 将列表转换为 DataFrame
     results_df = pd.DataFrame(results_data)
+    diff_slope_df = pd.DataFrame(diff_slope_data).transpose()
+    gradient_slope_df = pd.DataFrame(gradient_slope_data).transpose()
     # 将合并后的 DataFrame 写入新 Excel 文件
     output_name = os.path.basename(folder_path)
     output_path = os.path.join(folder_path, f'LinearFit_merged_{output_name}.xlsx')
-    results_df.to_excel(output_path, index=False, engine='openpyxl', sheet_name='LinearFit')
+    # results_df.to_excel(output_path, index=False, engine='openpyxl', sheet_name='LinearFit')
+    with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
+        results_df.to_excel(writer, index=False, sheet_name='LinearFit')
+        diff_slope_df.to_excel(writer, index=True, sheet_name='DiffSlope')
+        gradient_slope_df.to_excel(writer, index=True, sheet_name='DerivSlope')
 
     st.success(f"LinearFit excel file saved to {output_path}")
     return None
@@ -188,7 +213,7 @@ def single_curve(folder_path, w_l_value):
         title = (f'IV Curve with Linear Fit Coefficients\n'
                  f'Correlation Coefficient: {correlation:.4f}, '
                  f'Slope: {coeffs[0]:.2e}\n'
-                 f'Sheet Resistance[ohm/sq]: {coeffs[0] * w_l_value:.2e}')
+                 f'Sheet Resistance[ohm/sq]: {(1 / coeffs[0]) * w_l_value:.2e}')
         plt.title(title)
         plt.legend()
         plt.tight_layout()
@@ -216,7 +241,7 @@ def parameter_configuration():
     fit_check = st.checkbox('对合并的数据进行直线拟合并保存参数', value=True)
 
     # ---输入w/l值---
-    w_l_value = st.number_input('输入w/l值（方阻的截面宽度/长）', value=2.5/1.5)
+    w_l_value = st.number_input('输入w/l值（方阻的截面宽度/长）', value=2.5 / 1.5)
 
     # ---按mode执行---
     if st.button('运行文件转换程序'):
