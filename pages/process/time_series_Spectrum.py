@@ -80,6 +80,16 @@ def time_point_plot(df, df_T, curve_name, filename):
         # 选择时间点
         selected_columns = st.multiselect('(可多选时间点)', df.columns[1:])
         st.write(f'You selected {selected_columns}')
+        # 选择时间点范围
+        time_point_range = st.text_input('输入时间点范围索引（例如：0,10）', value='')
+        if time_point_range:
+            try:
+                start_time_point, end_time_point = map(int, time_point_range.split(','))
+                if start_time_point <= end_time_point:
+                    selected_range = df.columns[start_time_point + 1:end_time_point + 1]
+                    selected_columns.extend(selected_range)
+            except ValueError:
+                st.warning("请输入有效的时间点范围索引（例如：0,10）")
 
         # 选择保存文件夹
         save_folder = st.text_input("输入保存文件夹的**绝对路径**，如C:\\Users\\JiaPeng\\Desktop")  # 【可修改】
@@ -95,6 +105,15 @@ def time_point_plot(df, df_T, curve_name, filename):
         # 将波长列添加到要保存的 DataFrame 中
         data_to_save['Wavelength[nm]'] = wavelength_column
 
+        # 选择是否需要label
+        need_label = st.checkbox('是否需要绘制标签', value=False)
+        # 选择PLT图的x轴大小范围
+        x_axis_range = st.text_input("输入x轴范围（例如：300, 1100）", value="300, 1100")
+        x_min, x_max = map(float, x_axis_range.split(','))
+        # 选择PLT图的y轴大小范围
+        y_axis_range = st.text_input("输入y轴范围（例如：-0.05, 1.05）", value="-0.05, 1.05")
+        y_min, y_max = map(float, y_axis_range.split(','))
+
         # 绘制光谱曲线
         fig = plt.figure()
         for column in selected_columns:
@@ -103,8 +122,11 @@ def time_point_plot(df, df_T, curve_name, filename):
         plt.title(f'Transmission spectrum curve at a certain time point (voltage) \n'
                   f'{curve_name}')
         plt.xlabel('Wavelength[nm]')
+        plt.xlim(x_min, x_max)  # 设置x轴范围
         plt.ylabel('transmittance')
-        plt.legend(loc='upper left')  # 调整legend的位置到右侧
+        plt.ylim(y_min, y_max)  # 设置y轴范围
+        if need_label:
+            plt.legend(loc='upper left')  # 调整legend的位置到右侧
         fig.tight_layout()
         # 显示图形
         st.pyplot(fig)
@@ -154,17 +176,28 @@ def wavelength_plot(df, df_T, time_axis, save_folder, curve_name, filename):
     col3, col4 = st.columns([30, 70])
     with col3:
         # 选择波长
-        selected_columns = st.multiselect('(可多选波长)', df_T.columns[1:])
+        selected_columns = st.multiselect('(可多选波长)', df_T.columns[1:],
+                                          default=[df_T.columns[100], df_T.columns[200], df_T.columns[350],
+                                                   df_T.columns[450], df_T.columns[550],])
         st.write(f'You selected {selected_columns}')
         # 选择保存名字
         save_name = st.text_input("输入保存的名字，例如WavePlot_.png",
                                   value='WavePlot_'+filename.replace('.xlsx', '.png'))  # 【可修改】
+        # 选择PLT图的y轴大小范围
+        y_axis_range = st.text_input("输入y轴范围（例如：0.5, 1.0）", value="0.5, 1")
 
     with col4:
         # 创建一个空的 DataFrame 用于保存数据
         wavedata_to_save = pd.DataFrame()
         # 将波长列添加到要保存的 DataFrame 中
         wavedata_to_save['Time[s]'] = time_axis
+
+        # 解析y轴范围
+        try:
+            y_min, y_max = map(float, y_axis_range.split(','))
+        except ValueError:
+            y_min, y_max = 0.0, 1.0
+            st.warning("请输入有效的y轴范围（例如：0, 1）")
 
         # 绘制光谱曲线
         fig = plt.figure()
@@ -176,6 +209,7 @@ def wavelength_plot(df, df_T, time_axis, save_folder, curve_name, filename):
                   f'{curve_name}')
         plt.xlabel('Time[s]')
         plt.ylabel('transmittance')
+        plt.ylim(y_min, y_max)  # 设置y轴范围
         plt.legend(loc='upper right')  # 调整legend的位置到右侧
         fig.tight_layout()
         # 显示图形
