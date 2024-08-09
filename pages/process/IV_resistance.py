@@ -97,7 +97,7 @@ def plot_single_curve_save_datas(df):
         voltage_range_end = st.number_input("线性拟合电压范围的结束值 (V)", min_value=min(Potential),
                                             max_value=max(Potential), value=max(Potential))
         # 方块电阻长宽比
-        w_l_value = st.number_input("方块电阻宽长比（W/L）", value=0.6)
+        w_l_value = st.number_input("方块电阻宽长比（W/L）", value=2.5/1.5)
         # 添加曲线类型选项卡
         curve_type = st.radio("选择曲线所属类型",
                               ["欧姆型（恒电阻）", "隧穿型（出现负电阻）", "半导体型（电阻减小）", '其他类型'])
@@ -119,7 +119,7 @@ def plot_single_curve_save_datas(df):
         correlation = np.corrcoef(fit_potential, fit_current)[0, 1]
         fit_line = np.poly1d(coeffs)
         # 计算方阻
-        sheet_resistance = coeffs[0] * w_l_value
+        sheet_resistance = (1 / coeffs[0]) * w_l_value
 
         # 创建新的图表
         fig = plt.figure()
@@ -128,7 +128,7 @@ def plot_single_curve_save_datas(df):
         title = (f'IV Curve with Linear Fit Coefficients\n'
                  f'Correlation Coefficient: {correlation:.4f}, '
                  f'Slope: {coeffs[0]:.2e}\n'
-                 f'Sheet Resistance[ohm/sq]: {coeffs[0] * w_l_value:.2e}')
+                 f'Sheet Resistance[ohm/sq]: {sheet_resistance:.2e}')
         plt.title(title)
         plt.xlabel('Potential[V]')
         plt.ylabel('Current[A]')

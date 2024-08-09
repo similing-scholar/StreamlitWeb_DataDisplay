@@ -43,7 +43,7 @@ def sca2excel(file_path, spectrum):
         df.iloc[:, 1:] = df.iloc[:, 1:].apply(absorbance_to_transmittance)
 
     # 归一化光谱数据到0-1之间
-    df['Normalized'] = normalize_data(df[spectrum])
+    # df['Normalized'] = normalize_data(df[spectrum])
 
     # 将 DataFrame 保存为 Excel 文件
     file_name = file_path.split('.sca')[0].split('\\')[-1]

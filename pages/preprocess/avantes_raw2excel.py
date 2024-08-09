@@ -5,7 +5,6 @@ from scipy.interpolate import interp1d
 import numpy as np
 import re
 
-
 def transmittance_calculation(df):
     """计算透过率"""
     # 提取波长与背景、参考数据
@@ -23,7 +22,6 @@ def transmittance_calculation(df):
     result_df = pd.concat([wavelength_column, transmittance_df], axis=1)
     return result_df
 
-
 def transmittance_to_absorbance(transmittance_series):
     # 确保所有值都是正数，以避免取对数时出错
     # 将所有非正数值替换为一个非常小的正数
@@ -32,14 +30,12 @@ def transmittance_to_absorbance(transmittance_series):
     absorbance_series = -np.log10(transmittance_series)
     return absorbance_series
 
-
 def absorbance_calculation(df):
     """计算吸光度"""
     result_df = transmittance_calculation(df)
     # 使用apply函数时，确保传递整个列，这里使用lambda函数确保每一列都正确处理
     result_df.iloc[:, 1:] = result_df.iloc[:, 1:].apply(lambda x: transmittance_to_absorbance(x))
     return result_df
-
 
 def fluorescence_calculation(df):
     """计算荧光强度"""
@@ -53,7 +49,6 @@ def fluorescence_calculation(df):
     # 合并数据
     result_df = pd.concat([wavelength_column, fluorescence_df], axis=1)
     return result_df
-
 
 def dataframe_interpolation(df, interpolation_parameters):
     """对dataframe进行插值"""
@@ -74,6 +69,13 @@ def dataframe_interpolation(df, interpolation_parameters):
     interpolated_df = pd.DataFrame(interpolated_data)
     return interpolated_df
 
+def extract_time_interval(file_name):
+    """从文件名中提取时间间隔"""
+    match = re.search(r'scan(\d+\.?\d*)s', file_name)
+    if match:
+        return float(match.group(1))
+    else:
+        return None
 
 def excel2excel(file_path, spectrum_select, interpolation_parameters, column_names):
     # 读取原始数据，并修改格式
@@ -84,10 +86,11 @@ def excel2excel(file_path, spectrum_select, interpolation_parameters, column_nam
     df.columns = df.columns.str.replace(r'\.Raw8', '', regex=True, n=-1)  # 去除从第四列开始的'.RAW/Raw'
     df.columns = df.columns.str.replace(r'\.RAW8', '', regex=True, n=-1)  # 去除从第四列开始的'.RAW/Raw'
 
-    # 如果column_names不为空，则修改列名
-    if len(column_names) > 0:
-        column_start, column_interval, column_unit = column_names
-        column_names = [f'{column_start + i * column_interval}{column_unit}' for i in range(df.shape[1] - 3)]
+    # 自动提取时间间隔
+    time_interval = extract_time_interval(os.path.basename(file_path))
+    if time_interval and len(column_names) > 0:
+        column_start, _, column_unit = column_names
+        column_names = [f'{column_start + i * time_interval}{column_unit}' for i in range(df.shape[1] - 3)]
         df.columns.values[3:] = column_names
 
     df.astype('float64')  # 确保数据类型一致
@@ -115,7 +118,6 @@ def excel2excel(file_path, spectrum_select, interpolation_parameters, column_nam
 
     st.success(f"Converted excel file saved to {excel_output_path}")
     return None
-
 
 @st.cache_data(experimental_allow_widgets=True)
 def parameter_configuration():
@@ -157,7 +159,7 @@ def parameter_configuration():
     if column_check:
         col1, col2, col3 = st.columns([0.33, 0.33, 0.33])
         column_start = col1.number_input('序列起始序号', value=0)
-        column_interval = col2.number_input('即采样间隔（即采样间隔）', value=0.5)
+        column_interval = col2.number_input('即采样间隔（即采样间隔）,文件名中有‘scan0.5s’将自动匹配', value=0.5)
         column_unit = col3.text_input('单位（例如：s/min/mm）', value='s')
         column_names = [column_start, column_interval, column_unit]
     else:
@@ -181,13 +183,11 @@ def parameter_configuration():
 
     return None
 
-
 def st_main():
     st.title(":repeat_one: 数据预处理——avantes.raw/excel文件转excel文件")  # 🔂
     st.warning('先使用AvaSoft将.RAW8文件转换为excel表格')
     parameter_configuration()
     return None
-
 
 if __name__ == '__main__':
     st_main()

@@ -96,7 +96,7 @@ def cv_plot(df, curve_name, file_name):
 
         # 选择保存文件夹
         save_folder = st.text_input("输入保存文件夹的**绝对路径**，如C:\\User\\JiaPeng\\Desktop\\test")  # 【可修改】
-        save_name = st.text_input("输入保存的名字，例如xxx.png", value=file_name.replace('.xlsx', '.png'))  # 【可修改】
+        save_name = st.text_input("输入保存的名字，例如xxx.png", value=file_name.replace('.xlsx', '[process].png'))  # 【可修改】
         # 保存图形按钮
         if st.button("保存为png格式"):
             if save_folder == '':

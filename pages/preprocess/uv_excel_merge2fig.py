@@ -29,33 +29,26 @@ def merge_excel(folder_path, spectrum):
         # 将透过率列名重命名为file_name
         df.rename(columns={df.columns[1]: curve_label}, inplace=True)
         # 将归一化数据列名重命名为 "Normalized " + file_name
-        normalized_column_name = 'Normalized_' + curve_label
-        df.rename(columns={'Normalized': normalized_column_name}, inplace=True)
+        # normalized_column_name = 'Normalized_' + curve_label
+        # df.rename(columns={'Normalized': normalized_column_name}, inplace=True)
 
-        # # 如果第一次读取，直接作为基础 DataFrame
-        # if merged_df.empty:
-        #     merged_df = df
-        # else:
-        #     # 合并 Excel 文件，共享第一列 'Wavelengths'
-        #     merged_df = pd.merge(merged_df, df, on='Wavelength[nm]', how='outer')
         # 如果第一次读取，直接作为基础 DataFrame
         if merged_df.empty:
             merged_df = df[[df.columns[0], curve_label]]  # 只选取波长和当前文件的数据列
-            normalized_merged_df = df[[df.columns[0], normalized_column_name]]  # 只选取波长和当前文件的归一化数据列
+            # normalized_merged_df = df[[df.columns[0], normalized_column_name]]  # 只选取波长和当前文件的归一化数据列
         else:
             # 合并主数据，共享第一列 'Wavelengths'
             merged_df = pd.merge(merged_df, df[[df.columns[0], curve_label]], on='Wavelength[nm]', how='outer')
             # 合并归一化数据
-            normalized_merged_df = pd.merge(normalized_merged_df, df[[df.columns[0], normalized_column_name]],
-                                            on='Wavelength[nm]', how='outer')
+            # normalized_merged_df = pd.merge(normalized_merged_df, df[[df.columns[0], normalized_column_name]],
+            #                                 on='Wavelength[nm]', how='outer')
 
     # 将合并后的 DataFrame 写入新 Excel 文件
     output_name = os.path.basename(folder_path)
     output_path = os.path.join(folder_path, f'{spectrum}_merged_{output_name}.xlsx')
-    # merged_df.to_excel(output_path, index=False, engine='openpyxl', sheet_name=spectrum)
     with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
         merged_df.to_excel(writer, index=False, sheet_name=spectrum)
-        normalized_merged_df.to_excel(writer, index=False, sheet_name='Normalized Data')
+        # normalized_merged_df.to_excel(writer, index=False, sheet_name='Normalized Data')
 
     return st.success(f"Merged excel file saved to {output_path}")
 
@@ -269,8 +262,8 @@ def parameter_configuration():
     x_scale = (x_min, x_max)
     # ---画图纵轴范围选择---
     col3, col4 = st.columns(2)
-    y_min = col3.number_input('输入**y轴**(透过率/吸光度)**最小值**', value=-0.1)
-    y_max = col4.number_input('输入**y轴**(透过率/吸光度)**最大值**', value=1.2)
+    y_min = col3.number_input('输入**y轴**(透过率/吸光度)**最小值**', value=-0.10)
+    y_max = col4.number_input('输入**y轴**(透过率/吸光度)**最大值**', value=1.20)
     y_scale = (y_min, y_max)
 
     # ---绘图---
@@ -281,17 +274,17 @@ def parameter_configuration():
             for subfolder in subfolders:
                 if single_fig:
                     single_curve(subfolder, spectrum, x_scale, y_scale)
-                    single_normalized_curve(subfolder, spectrum, x_scale, y_scale)
+                    # single_normalized_curve(subfolder, spectrum, x_scale, y_scale)
                 if merged_fig:
                     merged_curve(subfolder, spectrum, x_scale, y_scale)
-                    merged_normalized_curve(subfolder, spectrum, x_scale, y_scale)
+                    # merged_normalized_curve(subfolder, spectrum, x_scale, y_scale)
         elif mode == '模式二：合并单个文件夹下的所有excel':
             if single_fig:
                 single_curve(excel_folder, spectrum, x_scale, y_scale)
-                single_normalized_curve(excel_folder, spectrum, x_scale, y_scale)
+                # single_normalized_curve(excel_folder, spectrum, x_scale, y_scale)
             if merged_fig:
                 merged_curve(excel_folder, spectrum, x_scale, y_scale)
-                merged_normalized_curve(excel_folder, spectrum, x_scale, y_scale)
+                # merged_normalized_curve(excel_folder, spectrum, x_scale, y_scale)
 
     return None
 

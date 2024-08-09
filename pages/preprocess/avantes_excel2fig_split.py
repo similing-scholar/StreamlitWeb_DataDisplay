@@ -10,12 +10,15 @@ import plotly.graph_objects as go
 import plotly.io as pio
 
 
-def excel2png(file_path, x_scale, y_scale):
+def excel2png(file_path, x_scale, y_scale, use_legend):
     """绘制2维图"""
     # 读取excel文件数据
     workbook = pd.ExcelFile(file_path)
     spectrum_data_sheet = workbook.sheet_names[0]
     df = workbook.parse(spectrum_data_sheet)
+    # 获取文件名
+    parameter_df = workbook.parse('parameter')
+    file_name = parameter_df['File Name'][0]
     # 获取列名，即光谱曲线的标签
     curve_labels = df.columns[1:]
 
@@ -26,10 +29,11 @@ def excel2png(file_path, x_scale, y_scale):
     # 遍历每个光谱曲线并绘总图
     plt.figure()
     plt.grid(True)  # 辅助网格样式
-    plt.ylim(x_scale[0], x_scale[1])
+    plt.title(f'{file_name}')
+    plt.xlim(x_scale[0], x_scale[1])
     plt.ylim(y_scale[0], y_scale[1])
-    plt.ylabel(spectrum_data_sheet)
     plt.xlabel('Wavelength[nm]')
+    plt.ylabel(spectrum_data_sheet)
     # 使用科学计数法表示纵轴坐标
     plt.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
     # 自定义颜色映射的颜色列表
@@ -48,7 +52,9 @@ def excel2png(file_path, x_scale, y_scale):
         intensity = df[curve_label]
         plt.plot(wavelength, intensity, label=curve_label, color=colors[i])
 
-    plt.legend(loc='upper left', bbox_to_anchor=(1.02, 1.0))  # 调整legend的位置到右侧
+    # 是否使用图例
+    if use_legend:
+        plt.legend(loc='upper left', bbox_to_anchor=(1.02, 1.0))  # 调整legend的位置到右侧
     plt.tight_layout()
     plt.savefig(file_path.replace('.xlsx', '.png'), dpi=300)
     plt.close()
@@ -100,6 +106,9 @@ def excel2waterfall(file_path, x_scale, y_scale):
     workbook = pd.ExcelFile(file_path)
     spectrum_data_sheet = workbook.sheet_names[0]
     df = workbook.parse(spectrum_data_sheet)
+    # 获取文件名
+    parameter_df = workbook.parse('parameter')
+    file_name = parameter_df['File Name'][0]
     # 获取列名，即光谱曲线的标签
     curve_labels = df.columns[1:]
 
@@ -124,6 +133,7 @@ def excel2waterfall(file_path, x_scale, y_scale):
             yaxis=dict(range=[0, len(curve_labels) - 1]),
             zaxis=dict(range=y_scale)
         ),
+        title=f"{file_name}",
         margin=dict(r=20, b=10, l=10, t=10)
     )
 
@@ -163,6 +173,8 @@ def parameter_configuration():
     # ---绘图类型选择---
     cola, colb, colc = st.columns(3)
     plot_2d = cola.checkbox('2D光谱图', value=True)
+    if plot_2d:
+        use_legend = cola.checkbox('2D图中使用图例', value=False)
     plot_gif = colb.checkbox('动图', value=True)
     if plot_gif:
         series_type = colb.text_input('输入序列的类型，例如：time', value='time')
@@ -178,7 +190,7 @@ def parameter_configuration():
                 if plot_gif:
                     excel2gif(file_path, series_type, x_scale, y_scale)
                 if plot_2d:
-                    excel2png(file_path, x_scale, y_scale)
+                    excel2png(file_path, x_scale, y_scale, use_legend)
                 if plot_3d:
                     excel2waterfall(file_path, x_scale, y_scale)
         elif mode == '模式二：处理单个文件夹下的所有excel':
@@ -189,14 +201,14 @@ def parameter_configuration():
                 if plot_gif:
                     excel2gif(file_path, series_type, x_scale, y_scale)
                 if plot_2d:
-                    excel2png(file_path, x_scale, y_scale)
+                    excel2png(file_path, x_scale, y_scale, use_legend)
                 if plot_3d:
                     excel2waterfall(file_path, x_scale, y_scale)
         elif mode == '模式三：处理单个excel':
             if plot_gif:
                 excel2gif(excel_path, series_type, x_scale, y_scale)
             if plot_2d:
-                excel2png(excel_path, x_scale, y_scale)
+                excel2png(excel_path, x_scale, y_scale, use_legend)
             if plot_3d:
                 excel2waterfall(excel_path, x_scale, y_scale)
 

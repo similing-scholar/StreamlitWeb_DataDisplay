@@ -178,13 +178,13 @@ def wavelength_plot(df, df_T, time_axis, save_folder, curve_name, filename):
         # 选择波长
         selected_columns = st.multiselect('(可多选波长)', df_T.columns[1:],
                                           default=[df_T.columns[100], df_T.columns[200], df_T.columns[350],
-                                                   df_T.columns[450], df_T.columns[550],])
+                                                   df_T.columns[450], df_T.columns[550], df_T.columns[600], df_T.columns[750]])
         st.write(f'You selected {selected_columns}')
         # 选择保存名字
         save_name = st.text_input("输入保存的名字，例如WavePlot_.png",
                                   value='WavePlot_'+filename.replace('.xlsx', '.png'))  # 【可修改】
         # 选择PLT图的y轴大小范围
-        y_axis_range = st.text_input("输入y轴范围（例如：0.5, 1.0）", value="0.5, 1")
+        y_axis_range = st.text_input("输入y轴范围（例如：0.5, 1.0）", value="0.28, 0.78")
 
     with col4:
         # 创建一个空的 DataFrame 用于保存数据
