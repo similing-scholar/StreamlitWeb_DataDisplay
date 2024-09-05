@@ -59,6 +59,59 @@ def It_CA_plot(df, curve_label, save_path):
     return st.success(f'It_CA_plot PNG saved to {save_path}')
 
 
+def Vt_plot(df, curve_label, save_path):
+    # 提取数据
+    time = df['Time[s]']
+    potential = df['Potential[V]']
+    current = df['Current[A]']
+
+    # 画图
+    fig = plt.figure(figsize=(4, 5))  # 根据需要调整 figsize
+    gs = fig.add_gridspec(2, 1, height_ratios=[1, 3])  # 子图高度比例
+
+    # 在第一个子图中绘制电流随时间变化的图形
+    ax1 = fig.add_subplot(gs[0])
+    ax1.plot(time, current, label=curve_label)
+    ax1.set_xlabel('Time[s]')
+    ax1.set_ylabel('Current[A]')
+    # 使用科学计数法表示纵轴坐标
+    ax1.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+
+    # 在第二个子图中绘制电压随时间变化的图形（主要）
+    ax2 = fig.add_subplot(gs[1])
+    ax2.plot(time, potential, label=curve_label)
+    ax2.set_xlabel('Time[s]')
+    ax2.set_ylabel('Potential[V]')
+    # 使用科学计数法表示纵轴坐标
+    # ax2.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+
+    plt.subplots_adjust(hspace=0.3)  # 调整子图之间的间距
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300)
+    plt.close()
+
+    return st.success(f'Vt_plot PNG saved to {save_path}')
+
+
+def OCP_plot(df, curve_label, save_path):
+    time = df['Time[s]']
+    potential = df['Potential[V]']
+
+    # 画图
+    plt.figure()
+    plt.plot(time, potential, label=curve_label)
+
+    plt.xlabel('Time[s]')
+    plt.ylabel('Potential[V]')
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300)
+    plt.close()
+
+    return st.success(f'OCP_plot PNG saved to {save_path}')
+
+
 def single_curve(folder_path):
     """一个数据一个图"""
     single_files = [f for f in os.listdir(folder_path) if f.endswith('.xlsx')]
@@ -83,6 +136,10 @@ def single_curve(folder_path):
             CV_plot(df, curve_label, save_path)
         elif 'It' in single_file_name or 'CA' in single_file_name:
             It_CA_plot(df, curve_label, save_path)
+        elif 'Vt' in single_file_name:
+            Vt_plot(df, curve_label, save_path)
+        elif 'OCP' in single_file_name:
+            OCP_plot(df, curve_label, save_path)
 
     return None
 
@@ -98,7 +155,7 @@ def parameter_configuration():
             "输入excel所在文件夹的上一级目录的绝对路径，例如：**C:\\Users\\JiaPeng\\Desktop\\test**")
     elif mode == '模式二：处理单个文件夹下的所有excel':
         excel_folder = st.text_input("输入excel所在文件夹的绝对路径，例如：**C:\\Users\\JiaPeng\\Desktop\\test\\2023**")
-    st.warning('根据文件名自动区分CV/It/CA')
+    st.warning('根据文件名自动区分CV/It/CA/Vt')
 
     # ---按mode执行---
     if st.button('运行画图程序'):

@@ -144,6 +144,37 @@ def excel2waterfall(file_path, x_scale, y_scale):
     return None
 
 
+def excel_split(file_path):
+    xls = pd.ExcelFile(file_path)
+    spectrum_model = xls.sheet_names[0]
+    df = pd.read_excel(xls, sheet_name=spectrum_model)
+    # 获取第一列数据 (Wavelength[nm])
+    wavelength_column = df.iloc[:, 0]
+
+    # 遍历每个列，创建单独的Excel文件
+    for i in range(1, df.shape[1]):  # 从第2列开始遍历 (跳过第1列)
+        # 创建一个新DataFrame，包含第一列和当前时间点列
+        new_df = pd.DataFrame({
+            'Wavelength[nm]': wavelength_column,
+            spectrum_model: df.iloc[:, i]
+        })
+
+        # 保存到新的Excel文件
+        file_name = df.columns[i]
+        file_dir = os.path.dirname(file_path)
+        excel_output_path = os.path.join(file_dir, f'{spectrum_model}_{file_name}.xlsx')
+
+        with pd.ExcelWriter(excel_output_path) as writer:
+            # 将 new_df保存到名为 scan_mode 的 sheet 中
+            new_df.to_excel(writer, sheet_name=spectrum_model, index=False)
+            # 创建包含参数的 DataFrame，将filename保存到名为 'parameter' 的 sheet 中
+            parameters = pd.DataFrame({'File Name': [file_name]})
+            parameters.to_excel(writer, sheet_name='parameter', index=False)
+        st.success(f"Splited excel file saved to {excel_output_path}")
+
+    return None
+
+
 @st.cache_data(experimental_allow_widgets=True)
 def parameter_configuration():
     st.subheader('画图程序')
@@ -212,7 +243,14 @@ def parameter_configuration():
             if plot_3d:
                 excel2waterfall(excel_path, x_scale, y_scale)
 
-    st.subheader('文件拆分程序（可以独立使用，共用上面的选择项与路径输入项）')
+    st.subheader('文件拆分程序（可以独立使用，共用上面的选择项与路径输入项，仅支持model2）')
+    if st.button('拆分excel文件'):
+        excel_files = [os.path.join(excel_folder, file) for file in os.listdir(excel_folder) if
+                       file.endswith('.xlsx') and
+                       any(keyword in file for keyword in
+                           ['Transmittance_merged', 'Absorbance_merged', 'Fluorescence_merged'])]
+        for file_path in excel_files:
+            excel_split(file_path)
 
     return None
 
