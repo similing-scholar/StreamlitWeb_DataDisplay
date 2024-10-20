@@ -92,6 +92,10 @@ def excel2excel(file_path, spectrum_select, interpolation_parameters, column_nam
         column_start, _, column_unit = column_names
         column_names = [f'{column_start + i * time_interval}{column_unit}' for i in range(df.shape[1] - 3)]
         df.columns.values[3:] = column_names
+    elif len(column_names) > 0:
+        column_start, column_interval, column_unit = column_names
+        column_names = [f'{column_start + i * column_interval}{column_unit}' for i in range(df.shape[1] - 3)]
+        df.columns.values[3:] = column_names
 
     df.astype('float64')  # 确保数据类型一致
     # 如果interpolation_parameters不为空，则插值

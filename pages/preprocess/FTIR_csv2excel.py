@@ -56,12 +56,12 @@ def parameter_configuration():
     # ---按mode执行---
     if st.button('运行文件转换程序'):
         if mode == '模式一：处理所有子文件夹内的所有csv':
-            csv_files = [os.path.join(root, file.lower()) for root, _, files in os.walk(csv_farther_folder) for file in files if
+            csv_files = [os.path.join(root, file) for root, _, files in os.walk(csv_farther_folder) for file in files if
                          file.lower().endswith('.csv')]
             for file_path in csv_files:
                 FTIR_csv2excel(file_path, base_csv_path)
         elif mode == '模式二：处理单个文件夹下的所有csv':
-            csv_files = [os.path.join(csv_folder, file.lower()) for file in os.listdir(csv_folder) if
+            csv_files = [os.path.join(csv_folder, file) for file in os.listdir(csv_folder) if
                          file.lower().endswith('.csv')]  # 避免大小写问题
             for csv_file in csv_files:
                 FTIR_csv2excel(csv_file, base_csv_path)

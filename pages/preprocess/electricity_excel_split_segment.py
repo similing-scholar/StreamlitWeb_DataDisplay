@@ -3,7 +3,7 @@ import streamlit as st
 import os
 
 
-def CV_segment(df, writer):
+def CV_segment(df, curve_label, writer):
     # 初始化变量
     segment_number = 1
     prev_potential = df.loc[0, 'Potential[V]']
@@ -56,6 +56,64 @@ def CV_segment(df, writer):
 
     # 将处理后的数据保存到新的 Excel 文件的第一个 sheet 中
     segments_df.to_excel(writer, sheet_name='CV_segment', index=False)
+    st.success(f"CV segment data saved to Excel file with curve label: {curve_label}")
+
+    return None
+
+
+def GCD_segment(df, curve_label, writer):
+    # 初始化变量
+    segment_number = 1
+    prev_current = df.loc[0, 'Current[A]']
+    is_positive = True if df.loc[1, 'Current[A]'] > 0 else False
+
+    # 创建一个新的DataFrame用于存储分段后的数据
+    segments_df = pd.DataFrame()
+
+    # 初始化空列表，用于存储每个 segment 的数据
+    segment_data = {
+        'Time[s]': [],
+        'Current[A]': [],
+        'Potential[V]': []
+    }
+
+    # 遍历数据行，检测电流反向并识别 segment
+    for i in range(len(df)):
+        current_current = df.loc[i, 'Current[A]']
+
+        # 检查电流反转并标记 segment
+        if (is_positive and current_current < 0) or (not is_positive and current_current > 0):
+            # 将当前 segment 的数据添加到 segments_df 中
+            segments_df[f'Segment {segment_number} Time[s]'] = pd.Series(segment_data['Time[s]'])
+            segments_df[f'Segment {segment_number} Current[A]'] = pd.Series(segment_data['Current[A]'])
+            segments_df[f'Segment {segment_number} Potential[V]'] = pd.Series(segment_data['Potential[V]'])
+
+            # 准备开始新的 segment
+            segment_number += 1
+            is_positive = not is_positive
+
+            # 重置 segment 数据列表
+            segment_data = {
+                'Time[s]': [],
+                'Current[A]': [],
+                'Potential[V]': []
+            }
+
+        # 将当前行数据添加到 segment 数据列表中
+        segment_data['Time[s]'].append(df.loc[i, 'Time[s]'])
+        segment_data['Current[A]'].append(df.loc[i, 'Current[A]'])
+        segment_data['Potential[V]'].append(df.loc[i, 'Potential[V]'])
+
+        prev_current = current_current
+
+    # 最后一个 segment 也需要添加到 segments_df 中
+    segments_df[f'Segment{segment_number} Time[s]'] = pd.Series(segment_data['Time[s]'])
+    segments_df[f'Segment{segment_number} Current[A]'] = pd.Series(segment_data['Current[A]'])
+    segments_df[f'Segment{segment_number} Potential[V]'] = pd.Series(segment_data['Potential[V]'])
+
+    # 将处理后的数据保存到新的 Excel 文件的 sheet 中
+    segments_df.to_excel(writer, sheet_name='GCD_segment', index=False)
+    st.success(f"GCD segment data saved to Excel file with curve label: {curve_label}")
 
     return None
 
@@ -79,6 +137,8 @@ def split_segment(folder_path):
         with pd.ExcelWriter(save_path, engine='xlsxwriter') as writer:
             if 'CV' in sheet_names[0]:
                 CV_segment(df, curve_label, writer)
+            elif 'GCD' in sheet_names[0]:
+                GCD_segment(df, curve_label, writer)
 
             # 保留其他 sheet 的数据
             for sheet_name in sheet_names[1:]:

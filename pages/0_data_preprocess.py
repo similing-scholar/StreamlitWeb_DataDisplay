@@ -3,7 +3,9 @@ page_0：将数据从原始格式转换为统一格式，并初步进行批量�
 """
 import streamlit as st
 
-from pages.preprocess import (keithley_txt2excel, ichy_csv2excel, IV_excel2fig_merge, electricity_excel2fig,
+from pages.preprocess import (keithley_txt2excel, ichy_csv2excel, chi_txt2excel, lanhe_csv2excel,
+                              IV_excel2fig_merge, electricity_excel2fig,
+                              electricity_excel_split_segment,
                               uv_sca2excel, uv_excel_merge2fig, excel_normalize,
                               avantes_raw2excel, avantes_excel2fig_split, olympus_csv2excel,
                               XRD_txt2excel, XRD_excel2fig, FTIR_csv2excel, FTIR_excel2fig,
@@ -15,7 +17,9 @@ from pages.preprocess import (keithley_txt2excel, ichy_csv2excel, IV_excel2fig_m
 st.set_page_config(layout="wide")
 
 # 设置选项按钮，选择运行哪个数据预处理程序
-tools = ['keithley.txt转excel', 'ichy.csv转excel', '电阻.excel数据合并与画图', '其他电学.excel数据画图',
+tools = ['keithley.txt转excel', 'ichy.csv转excel', 'chi.txt转excel', 'LANHE.csv转excel',
+         '电阻.excel数据合并与画图', '其他电学.excel数据画图',
+         '其他电学.excel数据分段',
          'uv.sca转excel', 'uv.excel数据合并与画图', 'excel数据归一化',
          'avantes.raw转excel', 'avantes.excel数据画图与拆分',
          'olympus.csv转excel', 'XRD.txt转excel', 'XRD.excel数据画图', 'FTIR.csv转excel', 'FTIR.excel数据画图',
@@ -26,10 +30,16 @@ if option == 'keithley.txt转excel':
     keithley_txt2excel.st_main()
 elif option == 'ichy.csv转excel':
     ichy_csv2excel.st_main()
+elif option == 'chi.txt转excel':
+    chi_txt2excel.st_main()
+elif option == 'LANHE.csv转excel':
+    lanhe_csv2excel.st_main()
 elif option == '电阻.excel数据合并与画图':
     IV_excel2fig_merge.st_main()
 elif option == '其他电学.excel数据画图':
     electricity_excel2fig.st_main()
+elif option == '其他电学.excel数据分段':
+    electricity_excel_split_segment.st_main()
 elif option == 'uv.sca转excel':
     uv_sca2excel.st_main()
 elif option == 'uv.excel数据合并与画图':
