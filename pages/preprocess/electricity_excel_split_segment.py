@@ -9,10 +9,10 @@ def CV_segment(df, curve_label, writer):
     prev_potential = df.loc[0, 'Potential[V]']
     is_forward = True if df.loc[1, 'Potential[V]'] > prev_potential else False
 
-    # 创建一个新的DataFrame用于存储分列后的数据
-    segments_df = pd.DataFrame()
+    # 创建空列表用于存储分段的DataFrame
+    segment_list = []
 
-    # 初始化空列表，用于存储每个 segment 的数据
+    # 初始化空字典，用于存储当前 segment 数据
     segment_data = {
         'Time[s]': [],
         'Potential[V]': [],
@@ -26,39 +26,49 @@ def CV_segment(df, curve_label, writer):
         # 检查电位翻转并标记 segment
         if (is_forward and current_potential < prev_potential) or \
                 (not is_forward and current_potential > prev_potential):
-            # 将当前 segment 的数据添加到 segments_df 中
-            segments_df[f'Segment {segment_number} Time[s]'] = pd.Series(segment_data['Time[s]'])
-            segments_df[f'Segment {segment_number} Potential[V]'] = pd.Series(segment_data['Potential[V]'])
-            segments_df[f'Segment {segment_number} Current[A]'] = pd.Series(segment_data['Current[A]'])
+            # 将当前 segment 的数据存储到一个临时 DataFrame 中
+            temp_df = pd.DataFrame(segment_data)
+            temp_df.columns = [
+                f'Segment {segment_number} Time[s]',
+                f'Segment {segment_number} Potential[V]',
+                f'Segment {segment_number} Current[A]'
+            ]
+            # 将临时 DataFrame 添加到 segment_list
+            segment_list.append(temp_df)
 
-            # 准备开始新的 segment
+            # 更新变量以开始新的 segment
             segment_number += 1
             is_forward = not is_forward
 
-            # 重置 segment 数据列表
+            # 重置 segment 数据
             segment_data = {
                 'Time[s]': [],
                 'Potential[V]': [],
                 'Current[A]': []
             }
 
-        # 将当前行数据添加到 segment 数据列表中
+        # 将当前行数据添加到 segment 数据中
         segment_data['Time[s]'].append(df.loc[i, 'Time[s]'])
         segment_data['Potential[V]'].append(df.loc[i, 'Potential[V]'])
         segment_data['Current[A]'].append(df.loc[i, 'Current[A]'])
 
         prev_potential = current_potential
 
-    # 最后一个 segment 也需要添加到 segments_df 中
-    segments_df[f'Segment{segment_number} Time[s]'] = pd.Series(segment_data['Time[s]'])
-    segments_df[f'Segment{segment_number} Potential[V]'] = pd.Series(segment_data['Potential[V]'])
-    segments_df[f'Segment{segment_number} Current[A]'] = pd.Series(segment_data['Current[A]'])
+    # 最后一个 segment 也需要添加到 segment_list 中
+    temp_df = pd.DataFrame(segment_data)
+    temp_df.columns = [
+        f'Segment {segment_number} Time[s]',
+        f'Segment {segment_number} Potential[V]',
+        f'Segment {segment_number} Current[A]'
+    ]
+    segment_list.append(temp_df)
 
-    # 将处理后的数据保存到新的 Excel 文件的第一个 sheet 中
+    # 将所有 segment 合并成一个大的 DataFrame
+    segments_df = pd.concat(segment_list, axis=1)
+
+    # 保存到 Excel 文件
     segments_df.to_excel(writer, sheet_name='CV_segment', index=False)
     st.success(f"CV segment data saved to Excel file with curve label: {curve_label}")
-
-    return None
 
 
 def GCD_segment(df, curve_label, writer):
@@ -67,10 +77,10 @@ def GCD_segment(df, curve_label, writer):
     prev_current = df.loc[0, 'Current[A]']
     is_positive = True if df.loc[1, 'Current[A]'] > 0 else False
 
-    # 创建一个新的DataFrame用于存储分段后的数据
-    segments_df = pd.DataFrame()
+    # 创建空列表用于存储分段的DataFrame
+    segment_list = []
 
-    # 初始化空列表，用于存储每个 segment 的数据
+    # 初始化空字典，用于存储当前 segment 数据
     segment_data = {
         'Time[s]': [],
         'Current[A]': [],
@@ -83,39 +93,49 @@ def GCD_segment(df, curve_label, writer):
 
         # 检查电流反转并标记 segment
         if (is_positive and current_current < 0) or (not is_positive and current_current > 0):
-            # 将当前 segment 的数据添加到 segments_df 中
-            segments_df[f'Segment {segment_number} Time[s]'] = pd.Series(segment_data['Time[s]'])
-            segments_df[f'Segment {segment_number} Current[A]'] = pd.Series(segment_data['Current[A]'])
-            segments_df[f'Segment {segment_number} Potential[V]'] = pd.Series(segment_data['Potential[V]'])
+            # 将当前 segment 的数据存储到一个临时 DataFrame 中
+            temp_df = pd.DataFrame(segment_data)
+            temp_df.columns = [
+                f'Segment {segment_number} Time[s]',
+                f'Segment {segment_number} Current[A]',
+                f'Segment {segment_number} Potential[V]'
+            ]
+            # 将临时 DataFrame 添加到 segment_list
+            segment_list.append(temp_df)
 
-            # 准备开始新的 segment
+            # 更新变量以开始新的 segment
             segment_number += 1
             is_positive = not is_positive
 
-            # 重置 segment 数据列表
+            # 重置 segment 数据
             segment_data = {
                 'Time[s]': [],
                 'Current[A]': [],
                 'Potential[V]': []
             }
 
-        # 将当前行数据添加到 segment 数据列表中
+        # 将当前行数据添加到 segment 数据中
         segment_data['Time[s]'].append(df.loc[i, 'Time[s]'])
         segment_data['Current[A]'].append(df.loc[i, 'Current[A]'])
         segment_data['Potential[V]'].append(df.loc[i, 'Potential[V]'])
 
         prev_current = current_current
 
-    # 最后一个 segment 也需要添加到 segments_df 中
-    segments_df[f'Segment{segment_number} Time[s]'] = pd.Series(segment_data['Time[s]'])
-    segments_df[f'Segment{segment_number} Current[A]'] = pd.Series(segment_data['Current[A]'])
-    segments_df[f'Segment{segment_number} Potential[V]'] = pd.Series(segment_data['Potential[V]'])
+    # 最后一个 segment 也需要添加到 segment_list 中
+    temp_df = pd.DataFrame(segment_data)
+    temp_df.columns = [
+        f'Segment {segment_number} Time[s]',
+        f'Segment {segment_number} Current[A]',
+        f'Segment {segment_number} Potential[V]'
+    ]
+    segment_list.append(temp_df)
 
-    # 将处理后的数据保存到新的 Excel 文件的 sheet 中
+    # 将所有 segment 合并成一个大的 DataFrame
+    segments_df = pd.concat(segment_list, axis=1)
+
+    # 保存到 Excel 文件
     segments_df.to_excel(writer, sheet_name='GCD_segment', index=False)
     st.success(f"GCD segment data saved to Excel file with curve label: {curve_label}")
-
-    return None
 
 
 def split_segment(folder_path):

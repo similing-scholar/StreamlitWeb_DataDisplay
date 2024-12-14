@@ -21,6 +21,9 @@ def kei_txt2excel(file_path, columns, current_unit):
     elif matches[0] == '方波信号测试数据':
         scan_model = 'CA'
         columns = ['Time[s]', 'Potential[V]', 'Current[mA]']
+    elif matches[0] == 'I-t测试数据':
+        scan_model = 'It'
+        columns = ['Time[s]', 'Potential[V]', 'Current[mA]']
     else:
         scan_model = 'Electricity'
 
@@ -69,7 +72,7 @@ def parameter_configuration():
         columns_select = st.selectbox('选择原始txt对应的**所有列名**选项',
                                       ('Potential[V], Current[mA]',
                                        'time[s], Potential[V], Current[mA]'))
-        st.warning('**I-V测试数据**和**方波信号测试数据**已实现自动列标题识别')
+        st.warning('**I-V测试数据**、**I-t信号测试数据**和**方波信号测试数据**已实现自动列标题识别')
     with col2:
         columns_input = st.text_input('可自定义输入**所有列名**（需用英文逗号隔开），例如：Potential[V], Current[mA]')
     if columns_input:

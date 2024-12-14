@@ -149,9 +149,9 @@ def parameter_configuration():
     interpolation_check = st.checkbox('是否插值？（原始AvaSoft数据的波长不为整数，默认使用插值统一数据格式）', value=True)
     if interpolation_check:
         col1, col2, col3, col4 = st.columns([0.25, 0.25, 0.25, 0.25])
-        start = col1.number_input('插值起始波长[nm]', min_value=187.3, max_value=1100.1, value=300.0)
-        end = col2.number_input('插值终止波长[nm]', min_value=start, max_value=1100.1,  value=1100.0)
-        interval = col3.number_input('插值间隔[nm]', min_value=0.5, max_value=100.0, value=1.0)
+        start = col1.number_input('插值起始波长[nm]', min_value=187.3, max_value=3500.1, value=300.0)
+        end = col2.number_input('插值终止波长[nm]', min_value=start, max_value=3500.1,  value=1100.0)
+        interval = col3.number_input('插值间隔[nm]', min_value=0.5, max_value=1000.0, value=1.0)
         kind = col4.selectbox('插值方法', ['linear', 'nearest', 'zero', 'slinear', 'quadratic', 'cubic', 'previous', 'next'], index=0)
         interpolation_parameters = [start, end, interval, kind]
     else:
