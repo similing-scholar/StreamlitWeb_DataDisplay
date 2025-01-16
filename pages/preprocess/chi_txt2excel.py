@@ -59,6 +59,15 @@ def chi_txt2excel(file_path, columns):
         scan_model = 'CV'
         columns = ['Potential[V]', 'Current[A]']
         keywords = ['Potential/V, Current/A']
+    else:
+        # 处理未匹配到已知模式的情况
+        scan_model = 'Unknown'
+        columns = ['Unknown']
+        keywords = []  # 空列表表示没有找到有效的关键词
+
+    # 如果没有找到有效的关键词，则返回错误信息
+    if not keywords:
+        return st.error("无法识别扫描模式或没有找到匹配的关键词，请检查文件内容。")
 
     # 通过关键词查找数据的起始行
     data_start_line = find_data_start_line(content, keywords)

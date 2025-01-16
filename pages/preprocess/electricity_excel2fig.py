@@ -112,6 +112,24 @@ def OCP_plot(df, curve_label, save_path):
     return st.success(f'OCP_plot PNG saved to {save_path}')
 
 
+def LSV_plot(df, curve_label, save_path):
+    potential = df['Potential[V]']
+    current = df['Current[A]']
+
+    # 画图
+    plt.figure()
+    plt.plot(potential, current, label=curve_label)
+
+    plt.xlabel('Potential[V]')
+    plt.ylabel('Current[A]')
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300)
+    plt.close()
+
+    return st.success(f'LSV_plot PNG saved to {save_path}')
+
+
 def single_curve(folder_path):
     """一个数据一个图"""
     single_files = [f for f in os.listdir(folder_path) if f.endswith('.xlsx')]
@@ -140,6 +158,8 @@ def single_curve(folder_path):
             Vt_plot(df, curve_label, save_path)
         elif 'OCP' in single_file_name:
             OCP_plot(df, curve_label, save_path)
+        elif 'LSV' in single_file_name:
+            LSV_plot(df, curve_label, save_path)
 
     return None
 
@@ -155,7 +175,7 @@ def parameter_configuration():
             "输入excel所在文件夹的上一级目录的绝对路径，例如：**C:\\Users\\JiaPeng\\Desktop\\test**")
     elif mode == '模式二：处理单个文件夹下的所有excel':
         excel_folder = st.text_input("输入excel所在文件夹的绝对路径，例如：**C:\\Users\\JiaPeng\\Desktop\\test\\2023**")
-    st.warning('根据文件名自动区分CV/It/CA/Vt')
+    st.warning('根据文件名自动区分CV/It/CA/Vt/OCP/LSV曲线')
 
     # ---按mode执行---
     if st.button('运行画图程序'):
